@@ -1,0 +1,50 @@
+version: 1
+mode: pr
+
+history:
+  lookback_runs: 50
+  lookback_days: 14
+
+inputs:
+  junit_globs:
+    - "**/junit*.xml"
+    - "**/TEST-*.xml"
+  log_globs:
+    - "**/ci.log"
+    - "**/console.log"
+
+identity:
+  test_id_strategy: "classname::name"
+  env_key_fields:
+    - os
+    - browser
+    - device
+    - runner_pool
+
+gating:
+  hard_block:
+    new_failure_min_repro: 2
+    critical_paths:
+      - "payments"
+      - "auth"
+      - "checkout"
+    required_suites:
+      - "smoke"
+    max_new_failure_clusters: 0
+
+  soft_block:
+    max_known_flaky_failures: 5
+    max_infra_failures: 10
+
+flake_detection:
+  quarantine_candidate:
+    min_samples: 20
+    flake_score_threshold: 0.75
+    confidence_threshold: 0.6
+
+recommendations:
+  targeted_rerun:
+    enabled: true
+    max_tests: 30
+    rerun_attempts: 1
+    prefer_runner_pool: "stable"
