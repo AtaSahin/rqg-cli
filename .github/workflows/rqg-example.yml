@@ -1,0 +1,68 @@
+name: RQG Example
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install pytest
+
+      - name: Run tests
+        run: |
+          pytest --junitxml=junit.xml || true
+
+      - name: Save logs
+        if: always()
+        run: |
+          echo "Test execution logs" > ci.log
+          echo "Build completed at $(date)" >> ci.log
+
+      - name: RQG Collect
+        run: |
+          rqg collect \
+            --repo ${{ github.repository }} \
+            --branch ${{ github.ref_name }} \
+            --commit ${{ github.sha }} \
+            --workflow ${{ github.workflow }} \
+            --build-number ${{ github.run_number }} \
+            --attempt ${{ github.run_attempt }}
+
+      - name: RQG Analyze
+        id: rqg
+        continue-on-error: true
+        run: |
+          rqg analyze
+
+      - name: Upload RQG artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: rqg-artifacts
+          path: |
+            rqg/decision.json
+            rqg/summary.md
+            rqg/bundle.jsonl
+
+      - name: Check RQG decision
+        if: steps.rqg.outcome == 'failure'
+        run: |
+          if [ -f rqg/decision.json ]; then
+            cat rqg/summary.md
+            exit 1
+          fi
