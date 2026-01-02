@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite name="test_suite" tests="2" failures="1" errors="0" skipped="0" time="1.0">
+        <testcase classname="tests.test_flaky" name="test_timeout_issue" time="0.8">
+            <failure message="TimeoutError: Connection timeout after 5s">
+                Traceback (most recent call last):
+                  File "/path/to/test_flaky.py", line 15, in test_timeout_issue
+                    response = requests.get("http://example.com", timeout=5)
+                TimeoutError: Connection timeout after 5s
+            </failure>
+        </testcase>
+        <testcase classname="tests.test_stable" name="test_stable_functionality" time="0.2">
+        </testcase>
+    </testsuite>
+</testsuites>
+

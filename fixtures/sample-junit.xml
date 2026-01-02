@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite name="test_suite" tests="5" failures="1" errors="0" skipped="1" time="2.345">
+        <testcase classname="tests.test_auth" name="test_login_success" time="0.5">
+        </testcase>
+        <testcase classname="tests.test_auth" name="test_login_failure" time="0.3">
+            <failure message="AssertionError: Expected success but got failure">
+                Traceback (most recent call last):
+                  File "/path/to/test_auth.py", line 42, in test_login_failure
+                    assert result.status == "success"
+                AssertionError: Expected success but got failure
+            </failure>
+        </testcase>
+        <testcase classname="tests.test_payments" name="test_payment_processing" time="1.2">
+        </testcase>
+        <testcase classname="tests.test_checkout" name="test_checkout_flow" time="0.34">
+        </testcase>
+        <testcase classname="tests.test_smoke" name="test_basic_functionality" time="0.005">
+            <skipped message="Skipped for maintenance"/>
+        </testcase>
+    </testsuite>
+</testsuites>
+
