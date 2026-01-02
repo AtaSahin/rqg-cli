@@ -1,0 +1,84 @@
+pipeline {
+    agent any
+    
+    environment {
+        RQG_DB_PATH = "${WORKSPACE}/.rqg/rqg.db"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                sh '''
+                    pip install -e .
+                    pip install pytest
+                    pytest --junitxml=junit.xml || true
+                '''
+            }
+        }
+        
+        stage('Save Logs') {
+            steps {
+                sh '''
+                    echo "Test execution logs" > ci.log
+                    echo "Build completed at $(date)" >> ci.log
+                '''
+            }
+        }
+        
+        stage('RQG Collect') {
+            steps {
+                sh '''
+                    rqg collect \
+                        --repo ${GIT_REPO:-unknown} \
+                        --branch ${BRANCH_NAME} \
+                        --commit ${GIT_COMMIT} \
+                        --workflow ${JOB_NAME} \
+                        --build-number ${BUILD_NUMBER} \
+                        --attempt ${BUILD_ATTEMPT:-1}
+                '''
+            }
+        }
+        
+        stage('RQG Analyze') {
+            steps {
+                script {
+                    def rqgExitCode = sh(
+                        script: 'rqg analyze',
+                        returnStatus: true
+                    )
+                    
+                    if (rqgExitCode == 20) {
+                        error("RQG HARD_BLOCK: Release blocked")
+                    } else if (rqgExitCode == 10) {
+                        if (env.RQG_OVERRIDE != "true") {
+                            error("RQG SOFT_BLOCK: Override required (set RQG_OVERRIDE=true)")
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Archive RQG Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'rqg/**', fingerprint: true
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh '''
+                if [ -f rqg/decision.json ]; then
+                    cat rqg/summary.md
+                fi
+            '''
+        }
+    }
+}
+
